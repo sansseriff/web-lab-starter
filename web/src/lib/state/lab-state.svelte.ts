@@ -33,7 +33,7 @@ export class Alert {
 
 export class LabState {
     // Reactive collections using Map for better performance
-    sensors = new SvelteMap<string, Equipment>();
+    sensors = new SvelteMap<string, Sensor>();
     equipment = new SvelteMap<string, Equipment>();
     alerts = $state<Alert[]>([]);
 
@@ -95,45 +95,40 @@ export class LabState {
     }
 
     // Smart patch application - only updates what changed
-    applyJsonPatch(patches: any[]) {
-        for (const patch of patches) {
-            this.applySinglePatch(patch);
+    applyJsonPatch(patch: any | any[]) {
+        // Handle both single patch and array of patches
+        const patches = Array.isArray(patch) ? patch : [patch];
+
+        for (const singlePatch of patches) {
+            this.applySinglePatch(singlePatch);
         }
         this.lastUpdate = new Date();
     }
 
     private applySinglePatch(patch: any) {
         const { op, path, value } = patch;
-        console.log('Applying patch:', { op, path, value });
         const pathParts = path.split('/').filter((p: string) => p);
 
         if (pathParts.length === 0) return;
 
         const [category, id, ...propertyPath] = pathParts;
-        console.log('Patch parts:', { category, id, propertyPath });
 
         switch (category) {
             case 'sensors':
-                console.log('Updating sensor:', id, value);
-                console.log('Operation:', op);
-                console.log('Property path:', propertyPath);
                 if (op === 'add' || op === 'replace') {
                     if (propertyPath.length === 0) {
                         // Full sensor update
                         this.updateSensor(id, value);
-                        console.log('Sensors size after update:', this.sensors.size);
                     } else {
                         // Property-specific update
                         let sensor = this.sensors.get(id);
                         if (!sensor) {
                             // Create sensor if it doesn't exist
-                            console.log('Creating new sensor for property update:', id);
                             this.updateSensor(id, {});
                             sensor = this.sensors.get(id);
                         }
                         if (sensor) {
                             this.updateNestedProperty(sensor, propertyPath, value);
-                            console.log('Updated sensor property, sensors size:', this.sensors.size);
                         }
                     }
                 } else if (op === 'remove') {
@@ -142,24 +137,20 @@ export class LabState {
                 break;
 
             case 'equipment':
-                console.log('Updating equipment:', id, value);
                 if (op === 'add' || op === 'replace') {
                     if (propertyPath.length === 0) {
                         // Full equipment update
                         this.updateEquipment(id, value);
-                        console.log('Equipment size after update:', this.equipment.size);
                     } else {
                         // Property-specific update
                         let equipment = this.equipment.get(id);
                         if (!equipment) {
                             // Create equipment if it doesn't exist
-                            console.log('Creating new equipment for property update:', id);
                             this.updateEquipment(id, {});
                             equipment = this.equipment.get(id);
                         }
                         if (equipment) {
                             this.updateNestedProperty(equipment, propertyPath, value);
-                            console.log('Updated equipment property, equipment size:', this.equipment.size);
                         }
                     }
                 } else if (op === 'remove') {
