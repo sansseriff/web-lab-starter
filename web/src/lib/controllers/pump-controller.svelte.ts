@@ -5,29 +5,29 @@ import type { WebSocketManager } from '../state/websocket-manager.svelte';
 export class PumpController {
   pump: Pump;
   wsManager: WebSocketManager;
-  
+
   // UI-specific reactive state
   isCommandPending = $state<boolean>(false);
   lastCommandResult = $state<string | null>(null);
   speedInputValue = $state<number>(0);
-  
+
   constructor(pump: Pump, wsManager: WebSocketManager) {
     this.pump = pump;
     this.wsManager = wsManager;
     this.speedInputValue = pump.speed;
-    
+
     // Sync speed input with actual pump speed
     $effect(() => {
       this.speedInputValue = this.pump.speed;
     });
   }
-  
+
   async toggle() {
     if (this.isCommandPending) return;
-    
+
     this.isCommandPending = true;
     this.lastCommandResult = null;
-    
+
     try {
       const success = this.wsManager.sendCommand('toggle_pump', { pumpId: this.pump.id });
       if (success) {
@@ -47,20 +47,20 @@ export class PumpController {
       }, 3000);
     }
   }
-  
+
   async setSpeed(newSpeed: number) {
     if (this.isCommandPending) return;
-    
+
     this.isCommandPending = true;
     this.lastCommandResult = null;
-    
+
     try {
       const clampedSpeed = this.pump.setSpeed(newSpeed);
-      const success = this.wsManager.sendCommand('set_pump_speed', { 
-        pumpId: this.pump.id, 
-        speed: clampedSpeed 
+      const success = this.wsManager.sendCommand('set_pump_speed', {
+        pumpId: this.pump.id,
+        speed: clampedSpeed
       });
-      
+
       if (success) {
         this.lastCommandResult = `Speed set to ${clampedSpeed} RPM`;
       } else {
@@ -77,7 +77,7 @@ export class PumpController {
       }, 3000);
     }
   }
-  
+
   // Handle UI input change
   onSpeedInputChange(event: Event) {
     const target = event.target as HTMLInputElement;
@@ -86,21 +86,21 @@ export class PumpController {
       this.setSpeed(newSpeed);
     }
   }
-  
+
   // Computed properties for UI
   get toggleButtonText() {
     if (this.isCommandPending) return 'Processing...';
     return this.pump.isRunning ? 'Stop Pump' : 'Start Pump';
   }
-  
+
   get speedDisplayText() {
     return `${this.pump.speed} RPM (${this.pump.speedPercentage.toFixed(1)}%)`;
   }
-  
+
   get canOperate() {
     return this.wsManager.canSendCommands && !this.isCommandPending;
   }
-  
+
   get statusColor() {
     if (this.pump.status === 'running') return 'green';
     if (this.pump.status === 'error') return 'red';

@@ -119,6 +119,7 @@ async def handle_command(command: str, params: Dict):
     if command == "toggle_pump":
         current_status = lab_state["equipment"]["pump_1"]["status"]
         new_status = "stopped" if current_status == "running" else "running"
+
         patch = update_state("equipment/pump_1/status", new_status)
         await manager.broadcast_patch(patch)
 
@@ -152,13 +153,23 @@ async def get_current_state():
 async def startup_event():
     async def simulate_updates():
         while True:
-            await asyncio.sleep(5)  # Update every 5 seconds
+            await asyncio.sleep(0.2)  # Update every 5 seconds
 
             # Simulate sensor reading update
             import random
 
             new_temp = round(22 + random.uniform(-2, 2), 1)
-            patch = update_state("sensors/temperature/value", new_temp)
+
+            sensor = random.choice(["temperature", "pressure", "humidity"])
+            # status = random.choice(["normal", "warning"])
+
+            sensor_st = random.choice(
+                [["value", new_temp], ["status", random.choice(["normal", "warning"])]]
+            )
+
+            # patch = update_state(f"sensors/{sensor}/value", new_temp)
+            patch = update_state(f"sensors/{sensor}/{sensor_st[0]}", sensor_st[1])
+
             await manager.broadcast_patch(patch)
 
             # Occasionally add an alert
