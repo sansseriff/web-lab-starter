@@ -2,7 +2,46 @@
 
 ![UI Screenshot](./ui.png)
 
-An experimental application demonstrating real-time state synchronization between a web frontend and a Python backend using WebSockets and JSON Patch. This project is designed as a foundation for laboratory automation software where multiple interfaces need to stay synchronized with equipment state.
+An experimental application demonstrating real-time state synchronization between a web frontend and a Python backend using WebSockets and JSON Patch. This project is designed as a foundation for laboratory automation software where multiple views of the UI (remote browser connection, local window on the control computer) need to stay synchronized with equipment state.
+
+## 🤔 The Problem with Traditional Approaches
+
+Most web applications are designed around **CRUD operations** (Create, Read, Update, Delete) that sync with databases. This works well for typical business applications where:
+- State changes are primarily user-driven
+- Data is naturally structured as discrete records
+- Brief delays in synchronization are acceptable
+
+However, **laboratory systems present unique challenges**:
+- Equipment state changes continuously and autonomously
+- Multiple interfaces need real-time synchronization
+- Complex interdependent state (sensors, equipment, safety systems)
+- Actions trigger cascading state changes across the system
+
+Traditional REST-based synchronization falls short because:
+- **Polling is inefficient** for rapidly changing sensor data
+- **Request-response patterns** don't handle autonomous equipment state changes
+- **Manual state management** becomes complex with multiple synchronized views
+- **Race conditions** can occur when multiple clients update state
+
+## 🔄 Alternative Approaches
+
+### CRDTs (Conflict-free Replicated Data Types)
+One solution is to use **CRDTs** like in [Yjs-FastAPI-Svelte](https://github.com/sansseriff/Yjs-FastAPI-Svelte), which provide:
+- Automatic conflict resolution
+- Distributed state synchronization
+- Offline-first capabilities
+
+However, CRDTs may be **overpowered** for laboratory software because:
+- Lab equipment control doesn't need arbitrary collaborative editing
+- We need **centralized authority** (the lab computer) over equipment state
+- Users primarily need to **view state** and **trigger actions**, not modify arbitrary data
+
+### WebSocket + JSON Patch: The Middle Ground
+This project explores a **middle ground** that provides:
+- **More advanced than REST**: Real-time state synchronization without polling
+- **Simpler than CRDTs**: Centralized state authority with broadcast updates
+- **Action-oriented**: Users trigger commands; system handles state synchronization
+- **Efficient**: Only state changes are transmitted, not full state snapshots
 
 ## 🎯 Project Overview
 
@@ -157,11 +196,3 @@ This experimental foundation is intended for evolution into comprehensive labora
 │   └── README.md          # Frontend documentation
 └── ui.png                 # Application screenshot
 ```
-
-## 🤝 Contributing
-
-This is an experimental project exploring state synchronization patterns for laboratory software. Contributions, ideas, and feedback are welcome!
-
-## 📄 License
-
-This project is experimental and intended for research and development purposes.
