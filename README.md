@@ -59,9 +59,11 @@ The system consists of two main components:
 ### Backend (`/app` folder)
 
 - **FastAPI** server with WebSocket support
-- Maintains authoritative lab state (sensors, equipment, alerts)
+- Maintains authoritative runtime lab state (sensors, equipment, alerts)
 - Generates JSON patches when state changes occur
 - Broadcasts patches to all connected clients
+- Persists state snapshots to SQLite using **SQLModel**
+- Uses a `lifespan` startup/shutdown flow to initialize and clean up services
 - Provides REST endpoints for command execution
 
 ### Frontend (`/web` folder)
@@ -82,24 +84,46 @@ The system consists of two main components:
 
 ### Running the Application
 
-1. **Start the backend server:**
+1. **Install backend dependencies with uv:**
 
    ```bash
    cd app
-   uv run main.py
-   # or for development with auto-reload:
-   uv run fastapi dev main.py
+   uv sync
    ```
 
-   The server will start on `http://localhost:8000`
+2. **Install frontend dependencies:**
+   ```bash
+   cd ../web
+   bun install
+   ```
 
-2. **Start the frontend development server:**
+3. **Choose a run mode:**
+
+   **Desktop mode (pywebview main thread, FastAPI background thread):**
    ```bash
    cd web
-   bun install
+   bun run build:desktop
+   cd ../app
+   uv run main.py --mode desktop
+   ```
+
+   **Web mode (backend only):**
+   ```bash
+   cd app
+   uv run main.py --mode web
+   ```
+
+   **Frontend dev mode against backend:**
+   ```bash
+   # terminal 1
+   cd app
+   uv run main.py --mode web
+
+   # terminal 2
+   cd web
    bun run dev
    ```
-   The web interface will be available at `http://localhost:5173`
+   The web interface will be available at `http://localhost:5173`.
 
 ## 📋 Features
 
@@ -171,6 +195,8 @@ This experimental foundation is intended for evolution into comprehensive labora
 
 - `fastapi[standard]` - Web framework with WebSocket support
 - `jsonpatch` - JSON Patch generation and application
+- `sqlmodel` - SQLite-backed persisted state storage
+- `pywebview` - Desktop app window host
 - `websockets` - WebSocket communication
 
 ### Frontend Dependencies
@@ -184,6 +210,9 @@ This experimental foundation is intended for evolution into comprehensive labora
 ```
 ├── app/                    # Python backend
 │   ├── main.py            # FastAPI application
+│   ├── models.py          # Pydantic state + API models
+│   ├── state_store.py     # In-memory authoritative state service
+│   ├── db.py              # SQLModel persistence layer
 │   ├── pyproject.toml     # Python dependencies
 │   └── README.md          # Backend documentation
 ├── web/                   # Svelte frontend
@@ -192,7 +221,22 @@ This experimental foundation is intended for evolution into comprehensive labora
 │   │   │   ├── state/     # State management
 │   │   │   └── controllers/ # Equipment controllers
 │   │   └── App.svelte     # Main application
+│   ├── build-desktop.mjs  # Copies built assets into backend
 │   ├── package.json       # Node.js dependencies
 │   └── README.md          # Frontend documentation
 └── ui.png                 # Application screenshot
+```
+
+### Rename App Title
+
+Use the helper to keep browser tab title and pywebview window title in sync:
+
+```bash
+bun scripts/set-app-name.ts "My App Name"
+```
+
+To also rebuild and copy the frontend bundle right after renaming:
+
+```bash
+bun scripts/set-app-name.ts "My App Name" --rebuild
 ```

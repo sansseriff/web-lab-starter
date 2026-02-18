@@ -21,12 +21,34 @@ export class WebSocketManager {
         return 'client_' + Math.random().toString(36).substr(2, 9);
     }
 
+    private getBackendHttpBase(): string {
+        const envBase = (import.meta as any).env?.VITE_BACKEND_URL as string | undefined;
+        if (envBase) {
+            return envBase.replace(/\/$/, '');
+        }
+
+        const { protocol, hostname, port } = window.location;
+        const isViteDevPort = port === '5173' || port === '4173';
+        if (isViteDevPort) {
+            return 'http://localhost:8000';
+        }
+
+        return `${protocol}//${hostname}${port ? `:${port}` : ''}`;
+    }
+
+    private getWebSocketUrl(): string {
+        const backendHttp = this.getBackendHttpBase();
+        const url = new URL(backendHttp);
+        const wsProtocol = url.protocol === 'https:' ? 'wss:' : 'ws:';
+        return `${wsProtocol}//${url.host}/ws/${this.clientId}`;
+    }
+
     connect() {
         if (!this.clientId) {
             this.clientId = this.generateClientId();
         }
 
-        const wsUrl = `ws://localhost:8000/ws/${this.clientId}`;
+        const wsUrl = this.getWebSocketUrl();
         this.ws = new WebSocket(wsUrl);
 
         this.ws.onopen = () => {

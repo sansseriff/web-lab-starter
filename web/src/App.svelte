@@ -96,11 +96,13 @@
             <div class="sensor-time">
               Updated: {sensor.timeSinceUpdate}
             </div>
-            {#if !sensor.isHealthy}
-              <button onclick={() => sensor.reset()} class="reset-btn">
-                Reset
-              </button>
-            {/if}
+            <div class="sensor-actions">
+              {#if !sensor.isHealthy}
+                <button onclick={() => sensor.reset()} class="reset-btn">
+                  Reset
+                </button>
+              {/if}
+            </div>
           </div>
         {/each}
       </section>
@@ -338,6 +340,13 @@
     margin: 10px 0;
   }
 
+  .sensor-card {
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    height: 200px;
+  }
+
   .sensor-value {
     font-size: 1.5em;
     font-weight: bold;
@@ -379,8 +388,15 @@
     margin-top: 5px;
   }
 
+  .sensor-actions {
+    margin-top: auto;
+    min-height: 28px;
+    display: flex;
+    align-items: flex-end;
+  }
+
   .reset-btn {
-    margin-top: 10px;
+    margin-top: 0;
     padding: 4px 8px;
     font-size: 0.8em;
     background: #ff9800;
