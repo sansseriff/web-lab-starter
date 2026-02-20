@@ -2,6 +2,7 @@
   import { LabState } from "./lib/state/lab-state.svelte";
   import { WebSocketManager } from "./lib/state/websocket-manager.svelte";
   import { PumpController } from "./lib/controllers/pump-controller.svelte";
+  import RealtimeBokehPlot from "./lib/components/realtime-bokeh-plot.svelte";
   import { onMount } from "svelte";
   import { SvelteMap } from "svelte/reactivity";
 
@@ -46,6 +47,7 @@
   // Computed values for UI
   const sensorEntries = $derived(Array.from(labState.sensors.entries()));
   const equipmentEntries = $derived(Array.from(labState.equipment.entries()));
+  const temperatureSensor = $derived(labState.getSensor("temperature") ?? null);
   const sortedAlerts = $derived(
     [...labState.alerts].sort(
       (a, b) =>
@@ -105,6 +107,12 @@
             </div>
           </div>
         {/each}
+
+        <RealtimeBokehPlot
+          sensor={temperatureSensor}
+          title="Temperature Trend (backend simulated data)"
+          maxPoints={400}
+        />
       </section>
 
       <!-- Equipment Section -->

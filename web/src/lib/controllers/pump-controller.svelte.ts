@@ -3,23 +3,17 @@ import type { Pump } from '../state/equipment.svelte';
 import type { WebSocketManager } from '../state/websocket-manager.svelte';
 
 export class PumpController {
-  pump: Pump;
+  pump!: Pump;
   wsManager: WebSocketManager;
 
   // UI-specific reactive state
   isCommandPending = $state<boolean>(false);
   lastCommandResult = $state<string | null>(null);
-  speedInputValue = $state<number>(0);
+  speedInputValue = $derived.by(() => this.pump ? this.pump.speed : 0);
 
   constructor(pump: Pump, wsManager: WebSocketManager) {
     this.pump = pump;
     this.wsManager = wsManager;
-    this.speedInputValue = pump.speed;
-
-    // Sync speed input with actual pump speed
-    $effect(() => {
-      this.speedInputValue = this.pump.speed;
-    });
   }
 
   async toggle() {
@@ -55,6 +49,7 @@ export class PumpController {
     this.lastCommandResult = null;
 
     try {
+      const previousSpeed = this.pump.speed;
       const clampedSpeed = this.pump.setSpeed(newSpeed);
       const success = this.wsManager.sendCommand('set_pump_speed', {
         pumpId: this.pump.id,
@@ -66,7 +61,7 @@ export class PumpController {
       } else {
         this.lastCommandResult = 'Failed to send speed command';
         // Revert optimistic update
-        this.pump.setSpeed(this.speedInputValue);
+        this.pump.setSpeed(previousSpeed);
       }
     } catch (error) {
       this.lastCommandResult = `Error: ${error}`;

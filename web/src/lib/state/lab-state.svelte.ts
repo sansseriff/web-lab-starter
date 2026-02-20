@@ -1,4 +1,4 @@
-// lab-state-new.svelte.ts - Generic reactive lab state manager
+// lab-state.svelte.ts - Generic reactive lab state manager
 import { ReactiveEntity, ReactiveCollection, ReactiveArray } from './reactive-base.svelte';
 import { Sensor } from './sensor.svelte';
 import { Equipment, Pump } from './equipment.svelte';

@@ -90,35 +90,39 @@ async def _simulation_loop(services: Services) -> None:
     persist_interval_seconds = 1.0
 
     while True:
-        await asyncio.sleep(0.2)
-        sensor_id = random.choice(["temperature", "pressure", "humidity"])
-        change = random.choice(["value", "status"])
+        await asyncio.sleep(0.0166)
 
-        if change == "value":
-            if sensor_id == "temperature":
-                new_value = round(22 + random.uniform(-2, 2), 1)
-            elif sensor_id == "pressure":
-                new_value = round(1013 + random.uniform(-5, 5), 2)
-            else:
-                new_value = round(45 + random.uniform(-8, 8), 1)
-            patch, version = services.state_store.apply_value(
-                f"sensors/{sensor_id}/value", new_value
-            )
-        else:
-            new_status = random.choice(["normal", "warning"])
-            patch, version = services.state_store.apply_value(
-                f"sensors/{sensor_id}/status", new_status
-            )
-
+        # Update all sensor values and statuses each cycle
+        sensors = services.state_store.get("sensors")
+        sensors = {
+            "temperature": {
+                **sensors["temperature"],
+                "value": round(22 + random.uniform(-2, 2), 1),
+                "status": random.choice(["normal", "warning"]),
+            },
+            "pressure": {
+                **sensors["pressure"],
+                "value": round(1013 + random.uniform(-5, 5), 2),
+                "status": random.choice(["normal", "warning"]),
+            },
+            "humidity": {
+                **sensors["humidity"],
+                "value": round(45 + random.uniform(-8, 8), 1),
+                "status": random.choice(["normal", "warning"]),
+            },
+        }
+        patch, version = services.state_store.apply_value("sensors", sensors)
         await services.connections.broadcast_patch(patch, version)
 
-        if random.random() < 0.1:
+        if random.random() < 0.001:
+            sensor_id = random.choice(["temperature", "pressure", "humidity"])
+            sensor = sensors[sensor_id]
             alerts = services.state_store.get("alerts")
             alerts.append(
                 {
                     "id": str(uuid.uuid4()),
-                    "message": f"{sensor_id} changed to {new_status if change == 'status' else new_value}",
-                    "severity": "warning" if change == "status" else "info",
+                    "message": f"{sensor_id} at {sensor['value']} ({sensor['status']})",
+                    "severity": "warning" if sensor["status"] == "warning" else "info",
                     "timestamp": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
                 }
             )

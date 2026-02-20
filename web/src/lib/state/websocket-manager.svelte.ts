@@ -28,7 +28,7 @@ export class WebSocketManager {
         }
 
         const { protocol, hostname, port } = window.location;
-        const isViteDevPort = port === '5173' || port === '4173';
+        const isViteDevPort = port === '5173' || port === '4173' || port === '5174';
         if (isViteDevPort) {
             return 'http://localhost:8000';
         }

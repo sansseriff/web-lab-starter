@@ -1,10 +1,13 @@
 // sensor.svelte.ts - Individual sensor state with methods
 import { ReactiveEntity } from './reactive-base.svelte';
 
+type SensorUpdateListener = (sensor: Sensor) => void;
+
 export class Sensor extends ReactiveEntity {
   value = $state<number>(0);
   unit = $state<string>('');
   status = $state<'normal' | 'warning' | 'error'>('normal');
+  private updateListeners = new Set<SensorUpdateListener>();
 
   constructor(id: string, initialData?: Partial<SensorData>) {
     super(id, 'sensor');
@@ -19,6 +22,14 @@ export class Sensor extends ReactiveEntity {
     if (data.unit !== undefined) this.unit = data.unit;
     if (data.status !== undefined) this.status = data.status;
     this.lastUpdated = new Date();
+    this.notifyUpdateListeners();
+  }
+
+  // Collection patch updates often call updateProperty directly.
+  updateProperty(path: string[], value: any) {
+    super.updateProperty(path, value);
+    this.lastUpdated = new Date();
+    this.notifyUpdateListeners();
   }
 
   // Computed properties using $derived
@@ -46,6 +57,20 @@ export class Sensor extends ReactiveEntity {
     this.value = 0;
     this.status = 'normal';
     this.lastUpdated = new Date();
+    this.notifyUpdateListeners();
+  }
+
+  subscribe(listener: SensorUpdateListener): () => void {
+    this.updateListeners.add(listener);
+    return () => {
+      this.updateListeners.delete(listener);
+    };
+  }
+
+  private notifyUpdateListeners() {
+    for (const listener of this.updateListeners) {
+      listener(this);
+    }
   }
 
   // Convert to plain object
